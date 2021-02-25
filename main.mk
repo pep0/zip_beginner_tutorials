@@ -22,6 +22,9 @@ all: $(PROJ).rpt $(PROJ).bin
 
 # Verilator related targets
 
+# check verion in the path! this is not very pretty.
+VERILATOR_PATH_I = /usr/local/Cellar/verilator/4.108/share/verilator/include/
+
 obj_dir/V%.cpp: %.v
 	verilator -Wall -cc %.v
 
@@ -30,8 +33,8 @@ obj_dir/V%__ALL.a: obj_dir/V%.cpp
 
 sim: $(PROJ).cpp obj_dir/V$(PROJ)__ALL.a
 	@echo "Building a Verilator-based simulation of $(PROJ)"
-	g++ -std=c++11 -I /usr/local/Cellar/verilator/4.108/share/verilator/include/ \
-	-I obj_dir /usr/local/Cellar/verilator/4.108/share/verilator/include/verilated.cpp \
+	g++ -std=c++11 -I $(VERILATOR_PATH_I) \
+	-I obj_dir $(VERILATOR_PATH_I)verilated.cpp \
 	$(PROJ).cpp obj_dir/V$(PROJ)__ALL.a -o %
 
 # Programming
