@@ -25,9 +25,9 @@
 //
 `default_nettype none
 //
-module thruwire(BTN_N, LEDG_N);
-	input	wire	BTN_N;
-	output	wire	LEDG_N;
+module thruwire(i_sw, o_led);
+	input	wire	i_sw;
+	output	wire	o_led;
 
-	assign	LEDG_N = BTN_N;
+	assign	o_led = i_sw;
 endmodule

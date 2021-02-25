@@ -26,16 +26,16 @@ all: $(PROJ).rpt $(PROJ).bin
 VERILATOR_PATH_I = /usr/local/Cellar/verilator/4.108/share/verilator/include/
 
 obj_dir/V%.cpp: %.v
-	verilator -Wall -cc %.v
+	verilator -Wall -cc $*.v
 
 obj_dir/V%__ALL.a: obj_dir/V%.cpp
 	make -C obj_dir -f V$*.mk
 
-sim: $(PROJ).cpp obj_dir/V$(PROJ)__ALL.a
-	@echo "Building a Verilator-based simulation of $(PROJ)"
+sim: $(SIM_MODULE).cpp obj_dir/V$(SIM_MODULE)__ALL.a
+	@echo "Building a Verilator-based simulation of $(SIM_MODULE)"
 	g++ -std=c++11 -I $(VERILATOR_PATH_I) \
 	-I obj_dir $(VERILATOR_PATH_I)verilated.cpp \
-	$(PROJ).cpp obj_dir/V$(PROJ)__ALL.a -o %
+	$(SIM_MODULE).cpp obj_dir/V$(SIM_MODULE)__ALL.a -o $(SIM_MODULE)
 
 # Programming
 prog: $(PROJ).bin
@@ -46,7 +46,9 @@ sudo-prog: $(PROJ).bin
 	sudo iceprog $<
 # Cleaning
 clean:
-	rm -f $(PROJ).asc $(PROJ).rpt $(PROJ).bin $(PROJ).json $(PROJ).log $(ADD_CLEAN)
+	rm -f $(PROJ).asc $(PROJ).rpt $(PROJ).bin $(PROJ).json $(PROJ).log $(ADD_CLEAN) 
+	rm -f $(SIM_MODULE).log $(SIM_MODULE)
+	rm -f -r obj_dir 
 
 .SECONDARY:
 .PHONY: all prog clean
