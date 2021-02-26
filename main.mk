@@ -55,7 +55,7 @@ sudo-prog: $(PROJ).bin
 clean:
 	rm -f $(PROJ).asc $(PROJ).rpt $(PROJ).bin $(PROJ).json $(PROJ).log $(ADD_CLEAN) 
 	rm -f $(SIM_MODULE).log $(SIM_MODULE)
-	rm -f $(SIM_MODULE)trace.vcd
+	rm -f $(SIM_MODULE)trace.vcd $(SIM_MODULE).vcd
 	rm -f -r obj_dir 
 
 .SECONDARY:
