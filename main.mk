@@ -26,7 +26,7 @@ all: $(PROJ).rpt $(PROJ).bin
 VERILATOR_PATH_I = /usr/local/Cellar/verilator/4.108/share/verilator/include/
 
 obj_dir/V%.cpp: %.v
-	verilator -Wall -cc $*.v
+	verilator -Wall -cc $^
 
 obj_dir/V%__ALL.a: obj_dir/V%.cpp
 	make -C obj_dir -f V$*.mk
