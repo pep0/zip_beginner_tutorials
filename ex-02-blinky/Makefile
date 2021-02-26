@@ -1,5 +1,5 @@
 PROJ = blinky_top
-SIM_MODULE = blinky 
+SIM_MODULE = blinky
 
 ADD_SRC = blinky.v
 

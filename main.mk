@@ -23,18 +23,25 @@ all: $(PROJ).rpt $(PROJ).bin
 # Verilator related targets
 
 # check verion in the path! this is not very pretty.
-VERILATOR_PATH_I = /usr/local/Cellar/verilator/4.108/share/verilator/include/
+#VERILATOR_PATH_I = /usr/local/Cellar/verilator/4.108/share/verilator/include/
+
+VERILATOR=verilator
+VERILATOR_ROOT ?= $(shell bash -c 'verilator -V|grep VERILATOR_ROOT | head -1 | sed -e "s/^.*=\s*//"')
+VINC := $(VERILATOR_ROOT)/include
 
 obj_dir/V%.cpp: %.v
-	verilator -Wall -cc $^
+	verilator --trace -Wall -cc $^
 
 obj_dir/V%__ALL.a: obj_dir/V%.cpp
-	make -C obj_dir -f V$*.mk
+	make --no-print-directory -C obj_dir -f V$*.mk
 
 sim: $(SIM_MODULE).cpp obj_dir/V$(SIM_MODULE)__ALL.a
 	@echo "Building a Verilator-based simulation of $(SIM_MODULE)"
-	g++ -std=c++11 -I $(VERILATOR_PATH_I) \
-	-I obj_dir $(VERILATOR_PATH_I)verilated.cpp \
+	g++ -std=c++11 \
+	-I obj_dir \
+	-I $(VINC) \
+	$(VINC)/verilated.cpp \
+	$(VINC)/verilated_vcd_c.cpp \
 	$(SIM_MODULE).cpp obj_dir/V$(SIM_MODULE)__ALL.a -o $(SIM_MODULE)
 
 # Programming
