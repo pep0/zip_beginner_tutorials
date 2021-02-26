@@ -44,6 +44,12 @@ sim: $(SIM_MODULE).cpp obj_dir/V$(SIM_MODULE)__ALL.a
 	$(VINC)/verilated_vcd_c.cpp \
 	$(SIM_MODULE).cpp obj_dir/V$(SIM_MODULE)__ALL.a -o $(SIM_MODULE)
 
+# Fromal Verification
+
+formal: 
+	sby $(SIM_MODULE).sby -f
+
+
 # Programming
 prog: $(PROJ).bin
 	iceprog $<
@@ -54,9 +60,11 @@ sudo-prog: $(PROJ).bin
 # Cleaning
 clean:
 	rm -f $(PROJ).asc $(PROJ).rpt $(PROJ).bin $(PROJ).json $(PROJ).log $(ADD_CLEAN) 
-	rm -f $(SIM_MODULE).log $(SIM_MODULE)
+	rm -f $(SIM_MODULE).log
 	rm -f $(SIM_MODULE)trace.vcd $(SIM_MODULE).vcd
-	rm -f -r obj_dir 
+	rm -f -r obj_dir
+	rm -f -r $(SIM_MODULE)
+	rm -f $(SIM_MODULE)
 
 .SECONDARY:
-.PHONY: all prog clean
+.PHONY: all prog formal clean
