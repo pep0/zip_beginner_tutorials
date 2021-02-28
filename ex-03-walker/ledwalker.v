@@ -44,7 +44,7 @@ module	ledwalker(i_clk, o_led);
 		wait_counter <= wait_counter -1'b1;
 	
 	wire stb;
-		assign stb = (wait_counter == 0);
+	assign stb = (wait_counter == 0);
 
 
 	reg	[3:0]	led_index;
