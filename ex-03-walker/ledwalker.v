@@ -31,13 +31,33 @@ module	ledwalker(i_clk, o_led);
 	input	wire		i_clk;
 	output	reg	[7:0]	o_led;
 
+	parameter CLK_RATE_HZ = 12_000_000;
+
+	// Integer Clock Divider
+	
+	reg [23:0] wait_counter;
+	initial wait_counter = 0;
+	always @(posedge i_clk)
+	if (wait_counter == 0)
+		wait_counter <= CLK_RATE_HZ-1;
+	else
+		wait_counter <= wait_counter -1'b1;
+	
+	wire stb;
+		assign stb = (wait_counter == 0);
+
+
 	reg	[3:0]	led_index;
 	initial	led_index = 0;
 	always @(posedge i_clk)
-	if (led_index > 4'd12)
-		led_index <= 0;
-	else
-		led_index <= led_index + 1'b1;
+	begin
+	if (stb) begin
+		if (led_index > 4'd12)
+			led_index <= 0;
+		else
+			led_index <= led_index + 1'b1;
+	end
+	end
 
 	initial o_led = 8'h01;
 	always @(posedge i_clk)
@@ -66,6 +86,16 @@ module	ledwalker(i_clk, o_led);
 // and placed on an actual FPGA, we place this within an ifdef FORMAL
 // block
 `ifdef	FORMAL
+	
+
+	always @(posedge i_clk)
+		// in the formal part <= is not smaller or equal and not
+		// a nonblocking assignment.
+		assert(wait_counter <= CLK_RATE_HZ - 1);
+
+	always @(posedge i_clk)
+		assert(stb == (wait_counter == 0));
+
 	always @(*)
 		assert(led_index <= 4'd13);
 
