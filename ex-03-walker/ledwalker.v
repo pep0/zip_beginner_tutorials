@@ -31,8 +31,11 @@ module	ledwalker(i_clk, o_led);
 	input	wire		i_clk;
 	output	reg	[7:0]	o_led;
 
+`ifdef	VERILATOR
+	parameter CLK_RATE_HZ = 1;
+`else
 	parameter CLK_RATE_HZ = 12_000_000;
-
+`endif
 	// Integer Clock Divider
 	
 	reg [23:0] wait_counter;
