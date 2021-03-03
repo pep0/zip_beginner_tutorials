@@ -64,6 +64,7 @@ clean:
 	rm -f $(SIM_MODULE)trace.vcd $(SIM_MODULE).vcd
 	rm -f -r obj_dir
 	rm -f -r $(SIM_MODULE)
+	rm -f -r $(ADD_CLEAN_FOLDER)
 	rm -f $(SIM_MODULE)
 
 .SECONDARY:
