@@ -103,27 +103,27 @@ module	helloworld(
 	if ((tx_stb)&&(!tx_busy))
 		tx_index <= tx_index + 1'b1;
 
-	always @(posedge i_clk)
+	always @(*)
 	case(tx_index)
-	4'h0: tx_data <= "H";
-	4'h1: tx_data <= "e";
-	4'h2: tx_data <= "l";
-	4'h3: tx_data <= "l";
+	4'h0: tx_data = "H";
+	4'h1: tx_data = "e";
+	4'h2: tx_data = "l";
+	4'h3: tx_data = "l";
 	//
-	4'h4: tx_data <= "o";
-	4'h5: tx_data <= ",";
-	4'h6: tx_data <= " ";
-	4'h7: tx_data <= "W";
+	4'h4: tx_data = "o";
+	4'h5: tx_data = ",";
+	4'h6: tx_data = " ";
+	4'h7: tx_data = "W";
 	//
-	4'h8: tx_data <= "o";
-	4'h9: tx_data <= "r";
-	4'ha: tx_data <= "l";
-	4'hb: tx_data <= "d";
+	4'h8: tx_data = "o";
+	4'h9: tx_data = "r";
+	4'ha: tx_data = "l";
+	4'hb: tx_data = "d";
 	//
-	4'hc: tx_data <= "!";
-	4'hd: tx_data <= " ";
-	4'he: tx_data <= "\n";
-	4'hf: tx_data <= "\r";
+	4'hc: tx_data = "!";
+	4'hd: tx_data = " ";
+	4'he: tx_data = "\n";
+	4'hf: tx_data = "\r";
 	//
 	endcase
 
@@ -151,25 +151,25 @@ module	helloworld(
 	if ((tx_stb)&&(!tx_busy))
 	begin
 		case(tx_index)
-		4'h0: assert(tx_data <= "H");
-		4'h1: assert(tx_data <= "e");
-		4'h2: assert(tx_data <= "l");
-		4'h3: assert(tx_data <= "l");
+		4'h0: assert(tx_data == "H");
+		4'h1: assert(tx_data == "e");
+		4'h2: assert(tx_data == "l");
+		4'h3: assert(tx_data == "l");
 		//
-		4'h4: assert(tx_data <= "o");
-		4'h5: assert(tx_data <= ",");
-		4'h6: assert(tx_data <= " ");
-		4'h7: assert(tx_data <= "W");
+		4'h4: assert(tx_data == "o");
+		4'h5: assert(tx_data == ",");
+		4'h6: assert(tx_data == " ");
+		4'h7: assert(tx_data == "W");
 		//
-		4'h8: assert(tx_data <= "o");
-		4'h9: assert(tx_data <= "r");
-		4'ha: assert(tx_data <= "l");
-		4'hb: assert(tx_data <= "d");
+		4'h8: assert(tx_data == "o");
+		4'h9: assert(tx_data == "r");
+		4'ha: assert(tx_data == "l");
+		4'hb: assert(tx_data == "d");
 		//
-		4'hc: assert(tx_data <= "!");
-		4'hd: assert(tx_data <= " ");
-		4'he: assert(tx_data <= "\n");
-		4'hf: assert(tx_data <= "\r");
+		4'hc: assert(tx_data == "!");
+		4'hd: assert(tx_data == " ");
+		4'he: assert(tx_data == "\n");
+		4'hf: assert(tx_data == "\r");
 		//
 		endcase
 	end
@@ -185,6 +185,15 @@ module	helloworld(
 	always @(posedge i_clk)
 	if (tx_index != 4'h0)
 		assert(tx_stb);
+
+
+
+	initial assume(!tx_restart);
+
+	initial assert(!tx_stb);
+
+
+
 
 `endif
 endmodule
