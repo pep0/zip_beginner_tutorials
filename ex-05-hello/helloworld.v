@@ -33,15 +33,26 @@
 //
 `default_nettype none
 //
-module	helloworld(CLK,
+module	helloworld(
 `ifdef	VERILATOR
+		i_clk,
 		o_setup,
+		o_uart_tx
+`else
+	CLK,
+	TX,
 `endif
-		TX);
+);
 	parameter	CLOCK_RATE_HZ = 12_000_000; // 12MHz clock
 	parameter	BAUD_RATE = 9_600; //  9600Baud
+
+`ifdef VERILATOR
+	input	i_clk;
+	output wire 	o_uart_tx;
+`else
 	input		CLK;
 	output	wire	TX;
+`endif
 
 	// Here we set the number of clocks per baud to something appropriate
 	// to create a 9600 Baud UART system from a 12MHz clock.
@@ -52,11 +63,15 @@ module	helloworld(CLK,
 	// test bench, so it knows how to match the baud rate we are using.
 	output	wire	[31:0]	o_setup;
 	assign	o_setup = INITIAL_UART_SETUP;
-`endif
-	
+
+`else
+	// Target -> icebreaker
 	wire i_clk, o_uart_tx;
 	assign i_clk = CLK;
 	assign o_uart_tx = TX;
+
+`endif
+	
 
 	//
 	// Restart the whole process once a second
