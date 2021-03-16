@@ -1,7 +1,7 @@
 PROJ := helloworld
 ADD_SRC = txuart/txuart.v
 
-ADD_CLEAN_FOLDER = txuart_cvr txuart_prf
+ADD_CLEAN_FOLDER = txuart_cvr txuart_prf helloworld
 
 PIN_DEF = ../icebreaker/icebreaker.pcf
 DEVICE = up5k
