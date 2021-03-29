@@ -29,7 +29,42 @@
 ################################################################################
 ##
 ##
-.PHONY: all
+
+# added for HW 
+
+PROJ = thedesign
+
+ADD_SRC = txdata.v txuart.v counter.v chgdetector.v
+
+PIN_DEF = ../icebreaker/icebreaker.pcf
+DEVICE = up5k
+PACKAGE = sg48
+
+
+all: $(PROJ).rpt $(PROJ).bin
+
+
+thedesign.json: thedesign.v $(ADD_SRC) $(ADD_DEPS)
+	yosys -ql $*.log $(if $(USE_ARACHNEPNR),-DUSE_ARACHNEPNR) -p 'synth_ice40 -json thedesign.json' thedesign.v $(ADD_SRC)
+
+%.asc: $(PIN_DEF) %.json
+	nextpnr-ice40 --$(DEVICE) $(if $(PACKAGE),--package $(PACKAGE)) $(if $(FREQ),--freq $(FREQ)) --json $(filter-out $<,$^) --pcf $< --asc $@
+
+%.bin: %.asc
+	icepack $< $@
+
+%.rpt: %.asc
+	icetime $(if $(FREQ),-c $(FREQ)) -d $(DEVICE) -mtr $@ $<
+
+# Programming
+prog: $(PROJ).bin
+	iceprog $<
+
+sudo-prog: $(PROJ).bin
+	@echo 'Executing prog as root!!!'
+	sudo iceprog $<
+
+## Verilator sim
 .DELETE_ON_ERROR:
 TOPMOD  := thedesign
 VLOGFIL := $(TOPMOD).v
@@ -39,7 +74,6 @@ SIMFILE := $(SIMPROG).cpp
 VDIRFB  := ./obj_dir
 COSIMS  := uartsim.cpp
 #
-all: $(VCDFILE)
 
 GCC := clang++
 CFLAGS = -g -std=c++11 -Wall -I $(VINC) -I $(VDIRFB)
@@ -71,8 +105,8 @@ $(VCDFILE): $(SIMPROG)
 
 .PHONY: clean
 clean:
-	rm -rf $(VDIRFB)/ $(SIMPROG) $(VCDFILE) txdata/ chgdetector/
-
+	rm -rf $(VDIRFB)/ $(SIMPROG) $(VCDFILE) txdata/ chgdetector/ 
+	rm -f $(TOPMOD).json $(TOPMOD).bin
 ##
 ## Find all of the Verilog dependencies and submodules
 ##

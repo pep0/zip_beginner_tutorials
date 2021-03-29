@@ -24,22 +24,47 @@
 //
 `default_nettype none
 //
-module thedesign(i_clk, i_event,
+module thedesign(
+
 `ifdef	VERILATOR
+		i_clk,
+		i_event,
 		o_setup,
-`endif
 		o_uart_tx);
+`else 
+	input wire CLK, 
+	input wire BTN_N,
+	output wire TX);
+	
+	wire i_clk, i_btn, o_uart_tx;
+	assign i_clk = CLK;
+	assign i_btn = ~BTN_N;
+	assign TX = o_uart_tx;
+
+`endif
 	//
-	parameter	CLOCK_RATE_HZ = 100_000_000;
-	parameter	BAUD_RATE = 115_200;
+	parameter	CLOCK_RATE_HZ = 12_000_000;
+	parameter	BAUD_RATE = 9_600;
 	//
-	input	wire	i_clk, i_event;
-	output	wire	o_uart_tx;
 
 	parameter	UART_SETUP = (CLOCK_RATE_HZ / BAUD_RATE);
 `ifdef	VERILATOR
+	input	wire	i_clk, i_event;
+	output	wire	o_uart_tx;
 	output	wire	[31:0]	o_setup;
 	assign	o_setup = UART_SETUP;
+`else
+	reg i_event;
+	reg last_btn;
+	initial i_event = 0;
+	initial last_btn = 0;
+	always @(posedge i_clk)begin
+		last_btn <= i_btn;
+		if(i_btn && !last_btn)
+			i_event <= 1'b1;
+		else
+			i_event <= 1'b0;
+	end
 `endif
 
 	wire	[31:0]	counterv, tx_data;
