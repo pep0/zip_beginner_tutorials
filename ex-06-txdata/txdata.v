@@ -46,6 +46,8 @@ module	txdata(i_clk, i_reset, i_stb, i_data, o_busy, o_uart_tx);
 
 	initial	tx_stb = 1'b0;
 	initial	state  = 0;
+	initial tx_data = "0";
+	initial hex = "0";
 
 	always @(posedge i_clk)
 	if (i_reset)
@@ -61,25 +63,31 @@ module	txdata(i_clk, i_reset, i_stb, i_data, o_busy, o_uart_tx);
 			tx_stb <= 1;
 		end
 	end else if ((tx_stb)&&(!tx_busy)) begin
-		state <= state + 1;
 
-		if (state >= 4'hd)
+		if (state >= 4'hc)
 		begin
 			tx_stb <= 1'b0;
 			state <= 0;
 		end
+		else
+			state <= state + 1;
 	end
 
-	assign o_busy = !(state == 0);
+	assign o_busy = !(state == 0) || tx_busy;
 
 	initial	sreg = 0;
 	always @(posedge i_clk)
-	if (!o_busy) // && (i_stb)
+	if (i_reset)
+		sreg <= 0;
+	else if (!o_busy) // && (i_stb)
 		sreg <= i_data;
 	else if ((!tx_busy)&&(state > 4'h1))
 		sreg <= { sreg[27:0], 4'h0 };
 
 	always @(posedge i_clk)
+	if (i_reset)
+		hex <= "0";
+	else begin
 	case(sreg[31:28])
 	4'h0: hex <= "0";
 	4'h1: hex <= "1";
@@ -99,9 +107,12 @@ module	txdata(i_clk, i_reset, i_stb, i_data, o_busy, o_uart_tx);
 	4'hf: hex <= "f";
 	default: begin end
 	endcase
+	end
 
 	always @(posedge i_clk)
-	if (!tx_busy)
+	if (i_reset)
+		tx_data <= "0";
+	else if (!tx_busy)
 		case(state)
 		4'h0: tx_data <= "0";
 		4'h1: tx_data <= "x";
@@ -115,6 +126,7 @@ module	txdata(i_clk, i_reset, i_stb, i_data, o_busy, o_uart_tx);
 		4'h9: tx_data <= hex;
 		4'ha: tx_data <= "\r";
 		4'hb: tx_data <= "\n";
+		4'hc: tx_data <= "0";
 		default: tx_data <= "Q";
 		endcase
 
@@ -163,6 +175,24 @@ module	txdata(i_clk, i_reset, i_stb, i_data, o_busy, o_uart_tx);
 		assume(tx_busy);
 
 
+	reg [2:0] f_maxbusy;
+	initial f_maxbusy = 0;
+	always @(posedge i_clk)
+	if ((tx_stb)&&(!tx_busy))
+		f_maxbusy <= 3'b001;
+	else if (f_maxbusy != 3'b000)
+		f_maxbusy <= f_maxbusy + 1'b1;
+
+
+	always @(*)
+	if (f_maxbusy == 0)
+		assume(!tx_busy);
+
+	always @(posedge i_clk)
+	if(tx_busy)
+		assert(o_busy);
+
+
 	//
 	// Some cover statements
 	//
@@ -196,6 +226,14 @@ module	txdata(i_clk, i_reset, i_stb, i_data, o_busy, o_uart_tx);
 	always @(posedge i_clk)
 	if ((f_past_valid) && (!$past(i_reset)) && (!$past(o_busy)) && (!$past(i_stb)))
 		assert($past(i_data)==sreg);
+
+	always @(posedge i_clk)
+	if ((f_past_valid) && (!$past(i_reset)))
+		assert(tx_stb != (state == 0));
+
+
+	always @(*)
+		assert(state < 4'hd);
 	//
 	// Some assertions about our sequence of states
 	//
@@ -231,41 +269,78 @@ module	txdata(i_clk, i_reset, i_stb, i_data, o_busy, o_uart_tx);
 	reg	[15:0]	p1reg;
 	initial	p1reg = 0;
 	always @(posedge i_clk)
-	if ((i_stb)&&(!o_busy))
+	if (i_reset)
+	begin
+		p1reg <= 0;
+		fv_data <= 0;
+	end
+	else if ((i_stb)&&(!o_busy)&&(!$past(i_reset)))
 	begin
 		p1reg <= 1;
 		fv_data <= i_data;
-		assert(p1reg[11:0] == 0);
-	end else if (p1reg) begin
+		assert(p1reg[15:0] == 0);
+		assert(tx_data == "0");
+		assert(state == 0);
+	end else if ((p1reg)&&(!$past(i_reset))) begin
 		if (p1reg != 1)
 			assert($stable(fv_data));
 		if (!tx_busy)
-			p1reg <= { p1reg[14:0], 1'b0 };
-		if ((!tx_busy)||(f_minbusy==0))
+			if (p1reg >= 16'h0800)
+				p1reg <= 0;
+			else
+				p1reg <= { p1reg[14:0], 1'b0 };
+		if ((!tx_busy)||(f_maxbusy==0))
 		begin
 			if (p1reg[0])
 			begin
 				assert((tx_data == "0")&&(state == 1));
 				assert((sreg == $past(i_data)));
+				assert(sreg == fv_data);
 			end
-			if (p1reg[1])
+			if (p1reg[1]) begin
 				assert((tx_data == "x")&&(state == 2));
+				assert(sreg == fv_data);
+			end
 			if (p1reg[2])
+			begin
 				assert((tx_data == to_ascii(fv_data[31:28]))&&state == 3);
+				assert(sreg == {fv_data[27:0], 4'h0});
+			end
 			if (p1reg[3])
+			begin
 				assert((tx_data == to_ascii(fv_data[27:24]))&&state == 4);
+				assert(sreg == {fv_data[23:0], 8'h00});
+			end
 			if (p1reg[4])
+			begin
 				assert((tx_data == to_ascii(fv_data[23:20]))&&state == 5);
+				assert(sreg == {fv_data[19:0], 12'h000});
+			end
 			if (p1reg[5])
+			begin
 				assert((tx_data == to_ascii(fv_data[19:16]))&&state == 6);
+				assert(sreg == {fv_data[15:0], 16'h0000});
+			end
 			if (p1reg[6])
+			begin
 				assert((tx_data == to_ascii(fv_data[15:12]))&&state == 7);
+				assert(sreg == {fv_data[11:0], 20'h00000});
+			end
 			if (p1reg[7])
+			begin
 				assert((tx_data == to_ascii(fv_data[11:8]))&&state == 8);
+				assert(sreg == {fv_data[7:0], 24'h000000});
+			end
 			if (p1reg[8])
+			begin
 				assert((tx_data == to_ascii(fv_data[7:4]))&&state == 9);
+				assert(sreg == {fv_data[3:0], 28'h0000000});
+			end
 			if (p1reg[9])
+			begin
 				assert((tx_data == to_ascii(fv_data[3:0]))&&state == 10);
+				assert(sreg == 32'h00000000);
+			end
 			if (p1reg[10])
 				assert((tx_data == "\r")&&(state == 11));
 			if (p1reg[11])
