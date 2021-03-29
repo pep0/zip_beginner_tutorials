@@ -52,6 +52,7 @@ module txuart(i_clk, i_wr, i_data, o_uart_tx, o_busy);
 	output	reg		o_busy;
 
 	// Define several states
+	// verilator lint_off UNUSED 
 	localparam [3:0] START	= 4'h0,
 		BIT_ZERO	= 4'h1,
 		BIT_ONE		= 4'h2,
@@ -63,6 +64,7 @@ module txuart(i_clk, i_wr, i_data, o_uart_tx, o_busy);
 		BIT_SEVEN	= 4'h8,
 		LAST		= 4'h8,
 		IDLE		= 4'hf;
+	//verilator lint_on UNUSED
 
 	reg	[23:0]	counter;
 	reg	[3:0]	state;
