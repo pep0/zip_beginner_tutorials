@@ -10,4 +10,4 @@ The icebreaker FPGA board was used for the excecises.
 1. Find the correct interface:
    `ls /dev/tty.*`
 2. Open the screen tool:
-   `screen /dev/tty.usbserial_ib4QuhwC1 <baud>`
+   `screen /dev/tty.usbserial-ib4QuhwC1 <baud>`
