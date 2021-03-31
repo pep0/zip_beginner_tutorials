@@ -52,6 +52,7 @@ module txuart(i_clk, i_wr, i_data, o_uart_tx, o_busy);
 	output	reg		o_busy;
 
 	// Define several states
+	// verilator lint_off UNUSED 
 	localparam [3:0] START	= 4'h0,
 		BIT_ZERO	= 4'h1,
 		BIT_ONE		= 4'h2,
@@ -68,6 +69,7 @@ module txuart(i_clk, i_wr, i_data, o_uart_tx, o_busy);
 	reg	[3:0]	state;
 	reg	[8:0]	lcl_data;
 	reg		baud_stb;
+	// verilator lint_on UNUSED 
 
 	// o_busy
 	//

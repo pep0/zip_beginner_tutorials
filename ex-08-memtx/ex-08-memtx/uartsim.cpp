@@ -85,7 +85,7 @@ int	UARTSIM::operator()(const int i_tx) {
 
 			nr = read(STDIN_FILENO, buf, 1);
 			if (1 == nr) {
-				m_tx_data = (-1<<10)
+				m_tx_data = (-1u<<10)
 					// << nstart_bits
 					|((buf[0]<<1)&0x01fe);
 				m_tx_busy = (1<<(10))-1;
