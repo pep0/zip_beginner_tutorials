@@ -130,13 +130,22 @@ module	memtx(i_clk, i_reset,
 	always @(posedge i_clk)
 		f_past_valid <= 1'b1;
 
-	/*
+	
 	// If the initial statements work, then assuming that the reset is
 	/// asserted initially is optional
 	always @(*)
 	if (!f_past_valid)
 		assume(i_reset);
-	*/
+
+
+	always @(posedge i_clk)
+		if ((!f_past_valid)||($past(i_reset)))
+		begin
+			assert(hz_counter == 28'h16);
+			assert(tx_index == 0);
+			assert(tx_stb == 0);
+		end
+	
 
 	always @(posedge i_clk)
 	if ((!f_past_valid)||($past(i_reset)))
@@ -159,6 +168,12 @@ module	memtx(i_clk, i_reset,
 
 	always @(posedge i_clk)
 		assert(tx_index < MSGLEN);
+
+	//Check restartign
+	
+	always @(posedge i_clk)
+	if(!$past(i_reset))
+		assert(tx_restart == (hz_counter == 0));
 
 	////////////////////////////////////////////////////////////////////////
 	//
@@ -201,14 +216,21 @@ module	memtx(i_clk, i_reset,
 			reg	[7:0]	f_const_value;
 
 	always @(posedge i_clk)
-	if (f_past_valid)
+	if (!f_past_valid)
 		f_const_value <= tx_memory[f_const_addr];
 	else
 		assert(f_const_value == tx_memory[f_const_addr]);
 
+	//always @(posedge i_clk)
+	//if(f_past_valid && $past(f_past_valid))
+	//	assert(f_const_value == $past(f_const_value));
+
+
 	always @(posedge i_clk)
 	if ((tx_stb)&&(!tx_busy)&&(tx_index == f_const_addr-1))
 		assert(tx_data == f_const_value);
+
+
 
 	////////////////////////////////////////////////////////////////////////
 	//
