@@ -86,6 +86,9 @@ $(VCDFILE): $(SIMPROG) memfile.hex
 clean:
 	rm -rf $(VDIRFB)/ $(SIMPROG) $(VCDFILE) memtx/ txuart/
 	rm -rf genhex memfile.hex
+	rm -rf memtx_prf memtx_cvr
+clean_fv:
+	rm -rf memtx_prf memtx_cvr
 
 ##
 ## Find all of the Verilog dependencies and submodules

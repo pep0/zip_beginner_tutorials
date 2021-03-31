@@ -77,6 +77,8 @@ module	memtx(i_clk, i_reset,
 	always @(posedge i_clk)
 		tx_restart <= (hz_counter == 1);
 
+	
+
 	//
 	// Transmit our message
 	//
@@ -88,6 +90,8 @@ module	memtx(i_clk, i_reset,
 	reg	[7:0]	tx_memory	[0:2047];
 
 	initial $readmemh("memfile.hex", tx_memory);
+	
+	
 
 	initial	tx_index = 0;
 	always @(posedge i_clk)
@@ -111,6 +115,8 @@ module	memtx(i_clk, i_reset,
 		tx_stb <= 1'b0;
 	else if ((tx_stb)&&(!tx_busy)&&(tx_index>=MSGLEN-1))
 		tx_stb <= 1'b0;
+	else if (tx_restart)
+		tx_stb <= 1'b1;
 
 	//
 	// Instantiate a serial port module here
@@ -163,11 +169,13 @@ module	memtx(i_clk, i_reset,
 				&&((!$past(tx_stb))||($past(tx_busy))));
 
 	always @(posedge i_clk)
-	if (tx_index != 0)
+	if (tx_index != 0 && tx_index!=MSGLEN)
 		assert(tx_stb);
 
+
+
 	always @(posedge i_clk)
-		assert(tx_index < MSGLEN);
+		assert(tx_index <= MSGLEN);
 
 	//Check restartign
 	
@@ -192,8 +200,8 @@ module	memtx(i_clk, i_reset,
 		assume(!tx_busy);
 	else if (($past(tx_stb))&&(!$past(tx_busy)))
 		assume(tx_busy);
-	else if (!$past(tx_busy))
-		assume(tx_busy);
+//	else if (!$past(tx_busy))
+//		assume(tx_busy);
 
 	reg	[1:0]	f_minbusy;
 	initial	f_minbusy = 0;
@@ -221,14 +229,17 @@ module	memtx(i_clk, i_reset,
 	else
 		assert(f_const_value == tx_memory[f_const_addr]);
 
+	
+
 	//always @(posedge i_clk)
 	//if(f_past_valid && $past(f_past_valid))
 	//	assert(f_const_value == $past(f_const_value));
 
 
 	always @(posedge i_clk)
-	if ((tx_stb)&&(!tx_busy)&&(tx_index == f_const_addr-1))
+	if ((tx_stb)&&(!tx_busy)&&(tx_index == f_const_addr ))
 		assert(tx_data == f_const_value);
+
 
 
 
@@ -242,7 +253,7 @@ module	memtx(i_clk, i_reset,
 	//
 	////////////////////////////////////////////////////////////////////////
 	always @(posedge i_clk)
-		cover(tx_index == 30);
+		cover(tx_index == 30  );
 
 `endif
 endmodule
