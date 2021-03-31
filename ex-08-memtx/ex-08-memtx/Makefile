@@ -30,7 +30,50 @@
 ################################################################################
 ##
 ##
-.PHONY: all
+# added for HW 
+
+PROJ =memtx
+
+ADD_SRC = txuart.v
+
+ADD_DEPS = memfile.hex
+
+PIN_DEF = icebreaker.pcf
+DEVICE = up5k
+PACKAGE = sg48
+
+
+all: $(PROJ).rpt $(PROJ).bin
+
+
+%.json: %.v $(ADD_SRC) $(ADD_DEPS)
+	yosys -ql $*.log -p 'synth_ice40 -json $@' $< $(ADD_SRC)
+
+%.asc: $(PIN_DEF) %.json
+	nextpnr-ice40 --$(DEVICE) $(if $(PACKAGE),--package $(PACKAGE)) $(if $(FREQ),--freq $(FREQ)) --json $(filter-out $<,$^) --pcf $< --asc $@
+
+%.bin: %.asc
+	icepack $< $@
+
+%.rpt: %.asc
+	icetime $(if $(FREQ),-c $(FREQ)) -d $(DEVICE) -mtr $@ $<
+
+# Programming
+prog: $(PROJ).bin
+	iceprog $<
+
+
+sudo-prog: $(PROJ).bin
+	@echo 'Executing prog as root!!!'
+	sudo iceprog $<
+
+
+# open screen for icebreaker
+screen: 
+	screen /dev/tty.usbserial-ib4QuhwC1 9600
+
+
+## Verilator sim
 .DELETE_ON_ERROR:
 TOPMOD  := memtx
 VLOGFIL := $(TOPMOD)
@@ -39,7 +82,7 @@ SIMPROG := $(TOPMOD)_tb
 SIMFILE := $(SIMPROG).cpp
 VDIRFB  := ./obj_dir
 COSIMS  := uartsim.cpp
-all: $(VCDFILE)
+#all: $(VCDFILE)
 
 GCC := clang++
 #CFLAGS = -g -Wall -I$(VINC) -I $(VDIRFB)
@@ -88,6 +131,7 @@ clean:
 	rm -rf $(VDIRFB)/ $(SIMPROG) $(VCDFILE) memtx/ txuart/
 	rm -rf genhex memfile.hex
 	rm -rf memtx_prf memtx_cvr
+	rm -rf memtx.bin memtx.log .log
 clean_fv:
 	rm -rf memtx_prf memtx_cvr
 

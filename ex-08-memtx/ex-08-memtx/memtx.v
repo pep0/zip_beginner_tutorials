@@ -33,23 +33,34 @@
 //
 `default_nettype none
 //
-module	memtx(i_clk, i_reset,
+module	memtx(
 `ifdef	VERILATOR
+		i_clk,
+		i_reset,
 		o_setup,
-`endif
 		o_uart_tx);
-	parameter	CLOCK_RATE_HZ = 100_000_000; // 100MHz clock
-`ifdef	VERILATOR
-	parameter	BAUD_RATE = 10_000_000; // 10 MBaud
-`else
-	parameter	BAUD_RATE = 115_200; // 115.2 KBaud
-`endif
-	parameter	MSGLEN = 1600;
 	input		i_clk, i_reset;
 	output	wire	o_uart_tx;
-
+`else 
+	input wire CLK, 
+	input wire BTN_N,
+	output wire TX);
+	
+	wire i_clk, i_reset, o_uart_tx;
+	assign i_clk = CLK;
+	assign i_reset = ~BTN_N;
+	assign TX = o_uart_tx;
+	parameter	CLOCK_RATE_HZ = 12_000_000; 
+`endif
+`ifdef	VERILATOR
+	parameter 	CLOCK_RATE_HZ = 100_000_000; // 100MHz clock
+	parameter	BAUD_RATE = 10_000_000; // 10 MBaud
+`else
+	parameter	BAUD_RATE = 9_600; // 115.2 KBaud
+`endif
+	parameter	MSGLEN = 1600;
 	// Here we set the number of clocks per baud to something appropriate
-	// to create a 115200 Baud UART system from a 100MHz clock.
+	// to create a 9600 Baud UART system from a 12MHz clock.
 	parameter	INITIAL_UART_SETUP = (CLOCK_RATE_HZ/BAUD_RATE);
 `ifdef	VERILATOR
 	// Let our Verilator .cpp file know what parameter was selected for
