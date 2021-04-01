@@ -41,8 +41,10 @@ COSIMS  := uartsim.cpp
 TESTFILE:= psalm.txt
 all: $(VCDFILE)
 
-GCC := g++
-CFLAGS = -g -Wall -I$(VINC) -I $(VDIRFB)
+#GCC := g++
+GCC := clang++
+#CFLAGS = -g -Wall -I$(VINC) -I $(VDIRFB)
+CFLAGS = -g -std=c++11 -Wall -I $(VINC) -I $(VDIRFB)
 #
 # Modern versions of Verilator and C++ may require an -faligned-new flag
 # CFLAGS = -g -Wall -faligned-new -I$(VINC) -I $(VDIRFB)

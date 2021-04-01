@@ -242,6 +242,9 @@ module rxuart(i_clk, i_uart_rx, o_wr, o_data
 	if ((f_past_valid)&&($past(state != STOP_BIT)))
 		assert(!o_wr);
 
+	always @(*)
+		assert(zero_baud_counter == (baud_counter == 0));
+
 	////////////////////////////////////////////////////////////////////////
 	//
 	// Cover
