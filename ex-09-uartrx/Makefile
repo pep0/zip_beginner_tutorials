@@ -4,8 +4,7 @@
 ##
 ## Project:	Verilog Tutorial Example file
 ##
-## Purpose:	Builds the memtx tutorial project, an example demonstrating
-##		the proper use of block RAM memory (read only).
+## Purpose:	Builds the serial port receiver tutorial project
 ##
 ## Targets:
 ##
@@ -32,13 +31,14 @@
 ##
 .PHONY: all
 .DELETE_ON_ERROR:
-TOPMOD  := memtx
-VLOGFIL := $(TOPMOD)
+TOPMOD  := rxuart
+VLOGFIL := $(TOPMOD).v
 VCDFILE := $(TOPMOD).vcd
 SIMPROG := $(TOPMOD)_tb
 SIMFILE := $(SIMPROG).cpp
 VDIRFB  := ./obj_dir
 COSIMS  := uartsim.cpp
+TESTFILE:= psalm.txt
 all: $(VCDFILE)
 
 GCC := g++
@@ -59,13 +59,7 @@ VERILATOR_ROOT ?= $(shell bash -c '$(VERILATOR) -V|grep VERILATOR_ROOT | head -1
 ## The directory containing the verilator includes
 VINC := $(VERILATOR_ROOT)/include
 
-genhex: genhex.cpp
-	g++ genhex.cpp -o genhex
-
-speech.hex: genhex gettysburg.txt
-	./genhex gettysburg.txt
-
-$(VDIRFB)/V$(TOPMOD).cpp: $(VLOGFIL).v
+$(VDIRFB)/V$(TOPMOD).cpp: $(VLOGFIL)
 	$(VERILATOR) $(VFLAGS) -cc $(VLOGFIL)
 
 $(VDIRFB)/V$(TOPMOD)__ALL.a: $(VDIRFB)/V$(TOPMOD).cpp
@@ -78,14 +72,13 @@ $(SIMPROG): $(SIMFILE) $(VDIRFB)/V$(TOPMOD)__ALL.a $(COSIMS)
 
 test: $(VCDFILE)
 
-$(VCDFILE): $(SIMPROG) speech.hex
-	./$(SIMPROG)
+$(VCDFILE): $(SIMPROG) $(TESTFILE)
+	./$(SIMPROG) $(TESTFILE)
 
 ## 
 .PHONY: clean
 clean:
-	rm -rf $(VDIRFB)/ $(SIMPROG) $(VCDFILE) memtx/ txuart/
-	rm -rf genhex speech.hex
+	rm -rf $(VDIRFB)/ $(SIMPROG) $(VCDFILE) helloworld/ txuart/
 
 ##
 ## Find all of the Verilog dependencies and submodules

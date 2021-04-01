@@ -1,23 +1,28 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Filename: 	txuart.v
+// Filename: 	f_txuart.v
 //
 // Project:	Verilog Tutorial Example file
 //
-// Purpose:	Transmit outputs over a single UART line.  This particular UART
-//		implementation has been extremely simplified: it does not handle
-//	generating break conditions, nor does it handle anything other than the
-//	8N1 (8 data bits, no parity, 1 stop bit) UART sub-protocol.
+// Purpose:	This module should be similar, if not largely identical to the
+//		txuart.v module you have been using in this tutorial.  The
+//	difference between the two are two output ports:
 //
-//	To interface with this module, connect it to your system clock, and
-//	pass it the byte of data you wish to transmit.  Strobe the i_wr line
-//	high for one cycle, and your data will be off.  Wait until the 'o_busy'
-//	line is low before strobing the i_wr line again--this implementation
-//	has NO BUFFER, so strobing i_wr while the core is busy will just
-//	get ignored.  The output will be placed on the o_txuart output line.
+//	- f_data
+//		This port contains the data that the transmitter is currently
+//		sending.  Once the receiver has finished receiving an item,
+//		it should be able to compare the value it has received against
+//		this one.  Indeed, it should be able to compare what it has
+//		received to this value mid-transition.
 //
-//	There are known deficiencies in the formal proof found within this
-//	module.  These have been left behind for you (the student) to fix.
+//	- f_counter
+//		This is a one-up counter from the beginning of transmission.
+//		It is used to synchronize the formal proof of the receiver
+//		with the internal state of the transmitter.
+//
+//	These two changes should make it possible to use this transmitter
+//	as part of a formal property set within the receiver.
+//
 //
 // Creator:	Dan Gisselquist, Ph.D.
 //		Gisselquist Technology, LLC
@@ -39,7 +44,7 @@
 //
 //
 //
-module txuart(i_clk, i_wr, i_data, o_uart_tx, o_busy);
+module f_txuart(i_clk, i_wr, i_data, o_uart_tx, o_busy, f_data, f_counter);
 	parameter	[23:0]	CLOCKS_PER_BAUD = 24'd868;
 	input	wire		i_clk;
 	input	wire		i_wr;
@@ -50,6 +55,10 @@ module txuart(i_clk, i_wr, i_data, o_uart_tx, o_busy);
 	// (i_wr)&&(!o_busy) is ever true, then the core has accepted a byte
 	// for transmission.
 	output	reg		o_busy;
+	//
+	//
+	output	reg	[7:0]		f_data;
+	output	reg	[24+4-1:0]	f_counter;
 
 	// Define several states
 	localparam [3:0] START	= 4'h0,
@@ -173,7 +182,9 @@ module txuart(i_clk, i_wr, i_data, o_uart_tx, o_busy);
 		counter  <= counter - 1'b1;
 	end else if (state != IDLE)
 	begin
-		counter <= CLOCKS_PER_BAUD - 1'b1;
+		counter <= CLOCKS_PER_BAUD - 24'h01;
+		if (state == LAST)
+			counter <= CLOCKS_PER_BAUD - 24'h02;
 		baud_stb <= 1'b0;
 	end
 
@@ -183,13 +194,7 @@ module txuart(i_clk, i_wr, i_data, o_uart_tx, o_busy);
 //
 //
 //
-`ifdef	FORMAL
-
-`ifdef	TXUART
 `define	ASSUME	assume
-`else
-`define	ASSUME	assert
-`endif
 
 	// Setup
 
@@ -215,23 +220,22 @@ module txuart(i_clk, i_wr, i_data, o_uart_tx, o_busy);
 	//
 	//////////////////////////////////
 
-	reg	[7:0]	fv_data;
 	always @(posedge i_clk)
 	if ((i_wr)&&(!o_busy))
-		fv_data <= i_data;
+		f_data <= i_data;
 
 	always @(posedge i_clk)
 	case(state)
 	IDLE:		assert(o_uart_tx == 1'b1);
 	START:		assert(o_uart_tx == 1'b0);
-	BIT_ZERO:	assert(o_uart_tx == fv_data[0]);
-	BIT_ONE:	assert(o_uart_tx == fv_data[1]);
-	BIT_TWO:	assert(o_uart_tx == fv_data[2]);
-	BIT_THREE:	assert(o_uart_tx == fv_data[3]);
-	BIT_FOUR:	assert(o_uart_tx == fv_data[4]);
-	BIT_FIVE:	assert(o_uart_tx == fv_data[5]);
-	BIT_SIX:	assert(o_uart_tx == fv_data[6]);
-	BIT_SEVEN:	assert(o_uart_tx == fv_data[7]);
+	BIT_ZERO:	assert(o_uart_tx == f_data[0]);
+	BIT_ONE:	assert(o_uart_tx == f_data[1]);
+	BIT_TWO:	assert(o_uart_tx == f_data[2]);
+	BIT_THREE:	assert(o_uart_tx == f_data[3]);
+	BIT_FOUR:	assert(o_uart_tx == f_data[4]);
+	BIT_FIVE:	assert(o_uart_tx == f_data[5]);
+	BIT_SIX:	assert(o_uart_tx == f_data[6]);
+	BIT_SEVEN:	assert(o_uart_tx == f_data[7]);
 	default: assert(0);
 	endcase
 
@@ -269,18 +273,42 @@ module txuart(i_clk, i_wr, i_data, o_uart_tx, o_busy);
 	always @(posedge i_clk)
 	case(state)
 	IDLE:		assert(lcl_data == 9'h1ff);
-	START:		assert(lcl_data == { fv_data[7:0], 1'b0 });
-	BIT_ZERO:	assert(lcl_data == { 1'b1, fv_data[7:0]});
-	BIT_ONE:	assert(lcl_data == { 2'h3, fv_data[7:1]});
-	BIT_TWO:	assert(lcl_data == { 3'h7, fv_data[7:2]});
-	BIT_THREE:	assert(lcl_data == { 4'hf, fv_data[7:3]});
-	BIT_FOUR:	assert(lcl_data == { 5'h1f, fv_data[7:4]});
-	BIT_FIVE:	assert(lcl_data == { 6'h3f, fv_data[7:5]});
-	BIT_SIX:	assert(lcl_data == { 7'h7f, fv_data[7:6]});
-	BIT_SEVEN:	assert(lcl_data == { 8'hff, fv_data[7:7]});
+	START:		assert(lcl_data == { f_data[7:0], 1'b0 });
+	BIT_ZERO:	assert(lcl_data == { 1'b1, f_data[7:0]});
+	BIT_ONE:	assert(lcl_data == { 2'h3, f_data[7:1]});
+	BIT_TWO:	assert(lcl_data == { 3'h7, f_data[7:2]});
+	BIT_THREE:	assert(lcl_data == { 4'hf, f_data[7:3]});
+	BIT_FOUR:	assert(lcl_data == { 5'h1f, f_data[7:4]});
+	BIT_FIVE:	assert(lcl_data == { 6'h3f, f_data[7:5]});
+	BIT_SIX:	assert(lcl_data == { 7'h7f, f_data[7:6]});
+	BIT_SEVEN:	assert(lcl_data == { 8'hff, f_data[7:7]});
 	default: assert(0);
 	endcase
 
-`endif	// FORMAL
+	initial	f_counter = 0;
+	always @(posedge i_clk)
+	if (!o_busy)
+		f_counter  <= 0;
+	else
+		f_counter <= f_counter + 1;
+
+	always @(*)
+	case(state)
+	START:		assert(f_counter ==   CLOCKS_PER_BAUD-1-counter);
+	BIT_ZERO:	assert(f_counter == 2*CLOCKS_PER_BAUD-1-counter);
+	BIT_ONE:	assert(f_counter == 3*CLOCKS_PER_BAUD-1-counter);
+	BIT_TWO:	assert(f_counter == 4*CLOCKS_PER_BAUD-1-counter);
+	BIT_THREE:	assert(f_counter == 5*CLOCKS_PER_BAUD-1-counter);
+	BIT_FOUR:	assert(f_counter == 6*CLOCKS_PER_BAUD-1-counter);
+	BIT_FIVE:	assert(f_counter == 7*CLOCKS_PER_BAUD-1-counter);
+	BIT_SIX:	assert(f_counter == 8*CLOCKS_PER_BAUD-1-counter);
+	BIT_SEVEN:	assert(f_counter == 9*CLOCKS_PER_BAUD-1-counter);
+	IDLE:		assert((f_counter== 0)||(!o_busy)
+				||(f_counter == 10*CLOCKS_PER_BAUD-2-counter));
+	endcase
+
+	always @(*)
+		assert(f_counter < 10*CLOCKS_PER_BAUD);
+
 endmodule
 

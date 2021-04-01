@@ -41,7 +41,11 @@ UARTSIM::UARTSIM(void) {
 	m_rx_baudcounter = 0;
 	m_tx_baudcounter = 0;
 	m_rx_state = RXIDLE;
-	m_tx_state = TXIDLE;
+
+	// Start with 16 idle characters, just to make sure we start on cut
+	m_tx_state = TXDATA;
+	m_tx_data = 0xf;
+	m_tx_busy = 0xf;
 }
 
 void	UARTSIM::setup(unsigned isetup) {
@@ -85,10 +89,9 @@ int	UARTSIM::operator()(const int i_tx) {
 
 			nr = read(STDIN_FILENO, buf, 1);
 			if (1 == nr) {
-				m_tx_data = (-1<<10)
-					// << nstart_bits
-					|((buf[0]<<1)&0x01fe);
-				m_tx_busy = (1<<(10))-1;
+				m_tx_data = 0x100|(buf[0]&0x0ff);
+
+				m_tx_busy  = 0x1ff;
 				m_tx_state = TXDATA;
 				o_rx = 0;
 				m_tx_baudcounter = m_baud_counts-1;
@@ -97,12 +100,22 @@ int	UARTSIM::operator()(const int i_tx) {
 			}
 		}
 	} else if (m_tx_baudcounter <= 0) {
-		m_tx_data >>= 1;
-		m_tx_busy >>= 1;
 		if (!m_tx_busy)
 			m_tx_state = TXIDLE;
-		else
+		else {
+			m_tx_data >>= 1;
+			m_tx_busy >>= 1;
 			m_tx_baudcounter = m_baud_counts-1;
+
+			// The above will take 10*baud_counts+1 counts per
+			// character.  This is one longer than desired, with
+			// the extra taking place on the last step.  (Which
+			// should correspond with the check for the next item)
+			// Let's shorten that step by one, so that we can
+			// transmit at full speed.
+			if (m_tx_busy == 1)
+				m_tx_baudcounter--;
+		}
 		o_rx = m_tx_data&1;
 	} else {
 		m_tx_baudcounter--;
