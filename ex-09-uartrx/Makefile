@@ -29,6 +29,48 @@
 ################################################################################
 ##
 ##
+# added for HW 
+
+PROJ = top
+
+ADD_SRC = ../ex-08-memtx/ex-08-memtx/txuart.v rxuart.v
+
+ADD_DEPS =
+
+PIN_DEF = icebreaker.pcf
+DEVICE = up5k
+PACKAGE = sg48
+
+
+all: $(PROJ).rpt $(PROJ).bin
+
+
+%.json: %.v $(ADD_SRC) $(ADD_DEPS)
+	yosys -ql $*.log -p 'synth_ice40 -json $@' $< $(ADD_SRC)
+
+%.asc: $(PIN_DEF) %.json
+	nextpnr-ice40 --$(DEVICE) $(if $(PACKAGE),--package $(PACKAGE)) $(if $(FREQ),--freq $(FREQ)) --json $(filter-out $<,$^) --pcf $< --asc $@
+
+%.bin: %.asc
+	icepack $< $@
+
+%.rpt: %.asc
+	icetime $(if $(FREQ),-c $(FREQ)) -d $(DEVICE) -mtr $@ $<
+
+# Programming
+prog: $(PROJ).bin
+	iceprog $<
+
+
+sudo-prog: $(PROJ).bin
+	@echo 'Executing prog as root!!!'
+	sudo iceprog $<
+
+
+# open screen for icebreaker
+screen: 
+	screen /dev/tty.usbserial-ib4QuhwC1 9600
+
 .PHONY: all
 .DELETE_ON_ERROR:
 TOPMOD  := rxuart
@@ -81,6 +123,7 @@ $(VCDFILE): $(SIMPROG) $(TESTFILE)
 .PHONY: clean
 clean:
 	rm -rf $(VDIRFB)/ $(SIMPROG) $(VCDFILE) helloworld/ txuart/
+	rm -rf $(PROJ).bin $(PROJ).log
 
 ##
 ## Find all of the Verilog dependencies and submodules

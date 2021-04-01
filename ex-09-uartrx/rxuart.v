@@ -57,7 +57,7 @@ module rxuart(i_clk, i_uart_rx, o_wr, o_data
 `ifdef	VERILATOR
 	parameter  [15:0]	CLOCKS_PER_BAUD = 25;
 `else
-	parameter  [15:0]	CLOCKS_PER_BAUD = 868;
+	parameter  [15:0]	CLOCKS_PER_BAUD = 1250; //12MHz und 9600Hz Baud
 `endif
 	//
 	localparam	[3:0]	IDLE      = 4'h0;
