@@ -123,6 +123,7 @@ $(VCDFILE): $(SIMPROG) $(TESTFILE)
 .PHONY: clean
 clean:
 	rm -rf $(VDIRFB)/ $(SIMPROG) $(VCDFILE) sfifo_*/
+	rm -rf $(PROJ).bin $(PROJ).log
 
 ##
 ## Find all of the Verilog dependencies and submodules

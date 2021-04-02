@@ -63,6 +63,7 @@ module sfifo(i_clk, i_wr, i_data, o_full, o_fill, i_rd, o_data, o_empty);
 	if (w_wr)
 		fifo_mem[wr_addr[(LGFLEN-1):0]] <= i_data;
 
+
 	//
 	// Read a value back out of it
 	//
@@ -87,7 +88,8 @@ module sfifo(i_clk, i_wr, i_data, o_full, o_fill, i_rd, o_data, o_empty);
 		rd_next = rd_addr[LGFLEN-1:0] + 1;
 	// Read from memory
 	reg [BW-1:0] rd_data;
-	initial rd_data = 0;
+	//initial rd_data = 0; This has to be commented out
+	//otherwise yosys does not infere RAM.
 	always @(posedge i_clk)
 		rd_data <= fifo_mem[(w_rd)?rd_next:rd_addr[LGFLEN-1:0]];
 	
