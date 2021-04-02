@@ -30,8 +30,8 @@
 //
 `default_nettype	none
 //
-module	linetest(i_clk, i_uart_rx, o_uart_tx,
-		o_led
+module	linetest(i_clk, i_uart_rx, o_uart_tx
+		//,o_led
 `ifdef	VERILATOR
 		,		o_setup
 `endif
@@ -120,5 +120,10 @@ module	linetest(i_clk, i_uart_rx, o_uart_tx,
 	wire	unused;
 	assign	unused = fifo_full;
 	// Verilator lint_on UNUSED
+
+	//
+`ifdef FORMAL
+
+`endif //FORMAL
 
 endmodule
