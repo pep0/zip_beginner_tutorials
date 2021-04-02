@@ -30,27 +30,33 @@
 //
 `default_nettype	none
 //
-module	linetest(i_clk, i_uart_rx, o_uart_tx
-		//,o_led
-`ifdef	VERILATOR
-		,		o_setup
+module	linetest(	
+`ifndef	VERILATOR
+	CLK, RX, TX
+`else
+		i_clk, i_uart_rx, o_uart_tx ,o_setup
 `endif
 		);
-	// 115200 Baud, if clk @ 100MHz
 `ifdef	VERILATOR
 	parameter 		CLOCKS_PER_BAUD = 24;
 `else
-	parameter 		CLOCKS_PER_BAUD = 868;
+	parameter 		CLOCKS_PER_BAUD = 1250; // 12MHz clk and 9600Baud
+	input wire 		CLK;
+	input wire		RX;
+	output wire		TX;
+
+	wire i_clk, i_uart_rx, o_uart_tx;
+	
+	assign		i_clk = CLK;
+	assign 		i_uart_rx = RX;
+	assign 		o_uart_tx = TX;
 `endif
-	//
+`ifdef	VERILATOR
 	input	wire		i_clk;
 	input	wire		i_uart_rx;
 	output	wire		o_uart_tx;
-`ifdef	VERILATOR
 	output	wire	[30:0]	o_setup;
-`endif
 
-`ifdef	VERILATOR
 	assign		o_setup = CLOCKS_PER_BAUD;
 `endif
 

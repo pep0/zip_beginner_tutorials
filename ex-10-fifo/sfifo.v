@@ -71,8 +71,45 @@ module sfifo(i_clk, i_wr, i_data, o_full, o_fill, i_rd, o_data, o_empty);
 	if (w_rd)
 		rd_addr <= rd_addr + 1;
 
+	//always @(*)
+	//	o_data = fifo_mem[rd_addr[LGFLEN-1:0]];
+	
+	//
+	// Read bypass for ICE40 devices
+	//
+	reg [BW-1:0] bypass_data;
+	initial bypass_data = 0;
+
+	always @(posedge i_clk)
+		bypass_data <= i_data;
+	
 	always @(*)
-		o_data = fifo_mem[rd_addr[LGFLEN-1:0]];
+		rd_next = rd_addr[LGFLEN-1:0] + 1;
+	// Read from memory
+	reg [BW-1:0] rd_data;
+	initial rd_data = 0;
+	always @(posedge i_clk)
+		rd_data <= fifo_mem[(w_rd)?rd_next:rd_addr[LGFLEN-1:0]];
+	
+	always @(*)
+		o_data = (bypass_valid) ? bypass_data : rd_data;
+
+	reg bypass_valid;
+	initial bypass_valid = 0;
+	always @(posedge i_clk)
+	begin
+		bypass_valid <= 1'b0;
+		if (!i_wr)
+			// If we haven't written to the
+			// FIFO in the last cycle, the
+			// memory read will be good
+			bypass_valid <= 1'b0;
+		else if (o_empty || (i_rd && (o_fill == 1)))
+			// Otherwise if we read, and the
+			// memory is now empty, use
+			// register value
+			bypass_valid <= 1'b1;
+	end
 
 	//
 	// Return some metrics of the FIFO, it's current fill level,
@@ -86,16 +123,17 @@ module sfifo(i_clk, i_wr, i_data, o_full, o_fill, i_rd, o_data, o_empty);
 	always @(*)
 		o_empty = (o_fill  == 0);
 
+	
+	/*The next block is commented out for the ICE40 read implementation*/
+	//always @(*)
+	//	rd_next = rd_addr[LGFLEN-1:0] + 1;
 
-	always @(*)
-		rd_next = rd_addr[LGFLEN-1:0] + 1;
 
-
-	// Make Verilator happy
-	// verilator lint_off UNUSED
-	wire	[LGFLEN-1:0]	unused;
-	assign	unused = rd_next;
-	// verilator lint_on  UNUSED
+	//// Make Verilator happy
+	//// verilator lint_off UNUSED
+	//wire	[LGFLEN-1:0]	unused;
+	//assign	unused = rd_next;
+	//// verilator lint_on  UNUSED
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
